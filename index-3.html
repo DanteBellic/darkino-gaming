@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بی‌مکس شخصی من</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#141c31;--line:#293653;--accent:#6ee7d8;--text:#eef4ff;--muted:#aab6cf}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1b3150,var(--bg) 60%);color:var(--text);font-family:system-ui,Tahoma,Arial,sans-serif;min-height:100vh;padding:18px}
+main{max-width:850px;margin:auto}.top{display:flex;align-items:center;gap:14px;margin:12px 0 20px}.avatar{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#6ee7d8,#6c8cff);font-size:34px;color:#07101c}.subtitle{color:var(--muted);font-size:14px}
+.panel{background:#141c31eF;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 12px 30px #0003}
+label{display:block;margin:8px 0;color:var(--muted);font-size:14px}input,textarea,select,button{font:inherit;border-radius:12px;border:1px solid var(--line);padding:11px;background:#0c1426;color:var(--text);width:100%}textarea{resize:vertical;min-height:72px}
+button{background:#20334b;cursor:pointer;font-weight:650}button.primary{background:var(--accent);color:#07131b;border:0}button:active{transform:scale(.99)}
+.row{display:flex;gap:9px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}.chat{height:310px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:8px}.bubble{max-width:90%;padding:11px 14px;border-radius:14px;white-space:pre-wrap;line-height:1.6}.me{align-self:flex-start;background:#263c59}.bot{align-self:flex-end;background:#183d42}.hint{font-size:12px;color:var(--muted);line-height:1.6}.reminder{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0}.reminder button{width:auto;padding:6px 10px}.status{color:var(--accent);font-size:13px}
+</style>
+</head>
+<body><main>
+<header class="top"><div class="avatar" id="avatar">🤖</div><div><h1 style="margin:0">بی‌مکس شخصی من</h1><div class="subtitle">نسخهٔ اولیهٔ قابل اجرا در مرورگر • چت، صدا، تاریخچه و یادآورها</div></div></header>
+<section class="panel">
+<h2>شخصی‌سازی</h2>
+<div class="row"><div><label for="name">اسم دستیار</label><input id="name" value="بی‌مکس"></div><div><label for="emoji">آواتار (ایموجی)</label><input id="emoji" value="🤖" maxlength="8"></div></div>
+<label for="personality">شخصیت و لحن</label><textarea id="personality">مهربان، منظم، دقیق و آرام باش. پاسخ‌ها را فارسی و مرحله‌به‌مرحله بده.</textarea>
+<button id="saveProfile">ذخیره تنظیمات</button>
+</section>
+<section class="panel">
+<h2>گفت‌وگو</h2><div class="hint">این نسخه بدون اتصال API کار می‌کند و پاسخ‌های سادهٔ محلی می‌دهد. برای هوش مصنوعی واقعی باید یک سرور امن به API وصل شود؛ کلید API را در این فایل عمومی قرار نده.</div>
+<div id="chat" class="chat" aria-live="polite"></div>
+<form id="chatForm"><label for="message">پیامت</label><textarea id="message" placeholder="سلام بی‌مکس..." required></textarea><div class="row" style="margin-top:8px"><button class="primary" type="submit">ارسال پیام</button><button type="button" id="speak">🎙️ گفتار به متن</button><button type="button" id="readLast">🔊 خواندن آخرین پاسخ</button></div></form>
+<div id="voiceStatus" class="status" aria-live="polite"></div>
+</section>
+<section class="panel">
+<h2>یادآورها</h2><form id="reminderForm"><label for="reminderText">عنوان یادآور</label><input id="reminderText" placeholder="مثلاً تمرین برنامه‌نویسی" required><label for="reminderTime">تاریخ و ساعت</label><input id="reminderTime" type="datetime-local" required><button class="primary" style="margin-top:10px">افزودن یادآور</button></form><div id="reminders"></div><p class="hint">یادآورها در همین مرورگر ذخیره می‌شوند. اعلان‌ها ممکن است به اجازهٔ مرورگر نیاز داشته باشند و این صفحه برای هشدار دقیق باید باز بماند.</p>
+</section>
+<footer class="hint">نسخهٔ نمایشی • تاریخچه و تنظیمات روی همین دستگاه ذخیره می‌شوند. پاک‌کردن داده‌های مرورگر ممکن است آن‌ها را حذف کند.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let historyItems=JSON.parse(localStorage.getItem('bemax_history')||'[]');
+let reminders=JSON.parse(localStorage.getItem('bemax_reminders')||'[]');
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function profile(){return {name:$('name').value.trim()||'بی‌مکس',personality:$('personality').value,emoji:$('emoji').value||'🤖'}}
+function addBubble(text,who){const d=document.createElement('div');d.className='bubble '+who;d.textContent=text;$('chat').appendChild(d);$('chat').scrollTop=$('chat').scrollHeight}
+function renderChat(){ $('chat').innerHTML='';historyItems.forEach(m=>addBubble(m.text,m.who)); }
+function reply(text){let p=profile(),t=text.toLowerCase();if(/سلام|درود/.test(t))return `سلام دانته! من ${p.name} هستم. چطور می‌تونم کمکت کنم؟`;if(/اسم|نامت/.test(t))return `اسم من ${p.name} است.`;if(/یادآور/.test(t))return 'برای ساخت یادآور، بخش «یادآورها» را پایین صفحه پر کن.';if(/کمک|چه کار/.test(t))return 'فعلاً می‌توانم گفت‌وگوی ساده، خواندن پاسخ با صدا، ذخیرهٔ تاریخچه و یادآورهای محلی را انجام بدهم. برای پاسخ‌های هوشمند واقعی باید API امن متصل شود.';return `پیامت رو دریافت کردم: «${text}»\nاین نسخهٔ آزمایشی هنوز به هوش مصنوعی آنلاین وصل نیست. برای پاسخ هوشمند، باید یک بک‌اند امن به API اضافه کنیم.`}
+$('chatForm').addEventListener('submit',e=>{e.preventDefault();let text=$('message').value.trim();if(!text)return;historyItems.push({text,who:'me'});addBubble(text,'me');let answer=reply(text);historyItems.push({text:answer,who:'bot'});addBubble(answer,'bot');save('bemax_history',historyItems);$('message').value='';});
+$('saveProfile').onclick=()=>{$('avatar').textContent=profile().emoji;save('bemax_profile',profile());$('voiceStatus').textContent='تنظیمات ذخیره شد.'};
+$('readLast').onclick=()=>{let last=[...historyItems].reverse().find(x=>x.who==='bot');if(!last)return; if(!('speechSynthesis'in window)){ $('voiceStatus').textContent='خواندن صوتی در این مرورگر پشتیبانی نمی‌شود.';return;}speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(last.text);u.lang='fa-IR';speechSynthesis.speak(u)};
+$('speak').onclick=()=>{let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('voiceStatus').textContent='گفتار به متن در این مرورگر پشتیبانی نمی‌شود؛ می‌توانی پیام را تایپ کنی.';return;}let r=new SR();r.lang='fa-IR';r.onstart=()=>$('voiceStatus').textContent='گوش می‌دهم…';r.onresult=e=>{$('message').value=e.results[0][0].transcript;$('voiceStatus').textContent='گفتار دریافت شد؛ برای ارسال، دکمهٔ ارسال پیام را بزن.'};r.onerror=()=>$('voiceStatus').textContent='دسترسی میکروفون ممکن نشد. مجوز مرورگر را بررسی کن.';r.start()};
+function renderReminders(){let box=$('reminders');box.innerHTML='';reminders.sort((a,b)=>a.time.localeCompare(b.time)).forEach((r,i)=>{let d=document.createElement('div');d.className='reminder';let span=document.createElement('span');span.textContent=r.text+' — '+new Date(r.time).toLocaleString('fa-IR');let b=document.createElement('button');b.textContent='حذف';b.onclick=()=>{reminders.splice(reminders.indexOf(r),1);save('bemax_reminders',reminders);renderReminders()};d.append(span,b);box.appendChild(d)})}
+$('reminderForm').onsubmit=e=>{e.preventDefault();reminders.push({text:$('reminderText').value.trim(),time:$('reminderTime').value,notified:false});save('bemax_reminders',reminders);renderReminders();e.target.reset()};
+function checkReminders(){let now=Date.now();reminders.forEach(r=>{if(!r.notified&&new Date(r.time).getTime()<=now){r.notified=true;alert('یادآور بی‌مکس: '+r.text)}});save('bemax_reminders',reminders)}
+try{let p=JSON.parse(localStorage.getItem('bemax_profile')||'null');if(p){$('name').value=p.name;$('personality').value=p.personality;$('emoji').value=p.emoji;$('avatar').textContent=p.emoji}}catch{}
+renderChat();renderReminders();checkReminders();setInterval(checkReminders,30000);
+if(!historyItems.length){let welcome='سلام! من نسخهٔ اولیهٔ بی‌مکس هستم. می‌تونی پیام بنویسی، پاسخ را با صدا بخوانی و یادآور بسازی.';historyItems.push({text:welcome,who:'bot'});save('bemax_history',historyItems);renderChat()}
+</script></body></html>
